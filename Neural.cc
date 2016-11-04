@@ -12,7 +12,7 @@ class Net {
 	public:
 		Net(std::vector <int>);
 		matrix<float> feedForward(matrix<float>);
-		void backProp(matrix<float>, matrix<float>);
+		std::vector<matrix<float> > backProp(matrix<float>, matrix<float>);
 		std::vector <int> top;	//the 'topology' of the net.
 	//protected:
 		std::vector<matrix<float> > weights;
@@ -53,25 +53,31 @@ matrix<float> Net::nonlin(matrix<float> inp, bool deriv) {
 		}
 	return inp;
 }
-void Net::backProp(matrix<float> inputs, matrix<float> outputs) {
+std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> outputs) {
+	
+	std::cout << "weighted inputs and activations" << std::endl;
+	
 	//weighted inputs used for backpropagation - better to call now than to repeatedly call later.
 	std::vector<matrix<float> > winps;	//weighted inputs
 	std::vector<matrix<float> > acts;	//neuron activations
+	acts.push_back(inputs);				//add input neurons - not technically activated, but still required.
 	for(unsigned int i = 0; i < weights.size(); ++i) {
-		acts.push_back(inputs);
 		inputs = prod(inputs, weights[i]);
 		winps.push_back(inputs);
 		inputs = nonlin(inputs);
+		acts.push_back(inputs);
 	}
+	std::cout << "error in output" << std::endl;
+	
 	//calculate error in output layer
 	std::vector<matrix<float> > errors;	//large error store
-	matrix<float> tempErrors;	//errors
-	tempErrors.resize(inputs.size1(), top.back(), false);
 	
 	errors.push_back(		//elementwise product of derivative of cost and derivative of neurons
 		element_prod(
 			acts.back() - outputs, 
 			nonlin(winps.back(), true)));
+	
+	std::cout << "error in the rest of the layers" << std::endl;
 	
 	//calculate errors in the rest of the layers
 	for(int i = weights.size()-1; i > 0; --i){
@@ -84,19 +90,26 @@ void Net::backProp(matrix<float> inputs, matrix<float> outputs) {
 				));
 	}
 	
-	//calculate error in ΔCost for each weight
+	std::cout << "cost per weight" << std::endl;
+	
+	//calculate ΔCost for each weight
 		//create matrix vector
 	std::vector<matrix<float> > dweights;
 	for(auto& tempMat : weights){
 		dweights.push_back(matrix <float>(tempMat.size1(), tempMat.size2()));
 		dweights.back().clear();
 	}
-		//activated[i]*error[i]
-	
+		//activated[i]*errors[i]
+	for(unsigned int i = 0; i < dweights.size(); ++i){
+		std::cout << "acts:\t" << acts[i] << "\nerrors:\t" << errors[i] << std::endl;
+		dweights[i] = prod(trans(acts[i]), errors[i]);
+	}
 	
 	//print error in weights
 	for(auto& m: dweights)
 		std::cout << m <<std::endl;
+	
+	return dweights;
 }
 
 int main(){
