@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <cstdlib>
+#include <algorithm>
 #include <cmath>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/operation.hpp>
@@ -14,6 +15,7 @@ class Net {
 		matrix<float> feedForward(matrix<float>);
 		std::vector<matrix<float> > backProp(matrix<float>, matrix<float>);
 		std::vector <int> top;	//the 'topology' of the net.
+		void train(unsigned int, std::vector<matrix<float> >, std::vector<matrix<float> >, unsigned int = 1);
 	//protected:
 		std::vector<matrix<float> > weights;
 		float nonlin(float, bool = false);
@@ -102,7 +104,7 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 		//activated[i]*errors[i]
 	for(unsigned int i = 0; i < dweights.size(); ++i){
 		std::cout << "acts:\t" << acts[i] << "\nerrors:\t" << errors[i] << std::endl;
-		dweights[i] = prod(trans(acts[i]), errors[i]);
+		dweights[i] = prod(trans(acts[i]), errors[i])/inputs.size1();	//total error is the average error in the batch
 	}
 	
 	//print error in weights
@@ -110,6 +112,37 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 		std::cout << m <<std::endl;
 	
 	return dweights;
+}
+void Net::train(unsigned int numLoops, std::vector<matrix<float> > inputs, std::vector<matrix<float> > outputs, unsigned int batchSize) {
+	std::vector<matrix<float> > batchInp, batchOutp;		//containers for batches
+	int tempRandInd;		//random index to add to batch
+	std::vector<int> randInds;	//random indices for making batches
+	std::vector<matrix<float> > dweights;	//weight errors
+	
+	for(unsigned int numBatches = 0; numBatches < numLoops; ++numBatches){
+		//create batches
+		randInds.clear();
+		batchInp.clear();
+		batchOutp.clear();
+		for(unsigned int batchFill = 0; batchFill < batchSize; ++batchFill){
+			tempRandInd = int(((float)rand() * inputs.size()) / (float)RAND_MAX);
+			if(std::find(randInds.begin(), randInds.end(), tempRandInd) != randInds.end())
+				--batchFill;
+			else{
+				randInds.push_back(tempRandInd);
+				batchInp.push_back(inputs[tempRandInd]);
+				batchOutp.push_back(outputs[tempRandInd]);
+			}
+		}
+		
+		//run backprop on batches
+		dweights = backProp(batchInp, batchOutp);
+		
+		//train weights!
+		for(unsigned int i = 0; i < weights.size(); ++i){
+			weights[i] -= dweights[i];
+		}
+	}
 }
 
 int main(){
