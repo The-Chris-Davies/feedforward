@@ -121,7 +121,6 @@ void Net::train(unsigned int numLoops, std::vector<matrix<float> > inputs, std::
 				row(batchOutp, batchFill) = row(outputs[tempRandInd], 0);
 			}
 		}
-		std::cout << "batch:\t" << batchInp << '\t' << batchOutp << std::endl;
 		//run backprop on batches
 		dweights = backProp(batchInp, batchOutp);
 		
@@ -134,7 +133,7 @@ void Net::train(unsigned int numLoops, std::vector<matrix<float> > inputs, std::
 
 int main(){
 	Net testNet(std::vector<int>({2, 3, 1}));
-	matrix<float> in(4, 2, 1), out(4,1,1);
+	matrix<float> in(1, 2, 1), out(1,1,1);
 	std::vector<matrix<float> > inVec(5, in), outVec(5, out);
 	
 	std::cout << "input:" << std::endl;
@@ -145,8 +144,12 @@ int main(){
 	std::cout << "running feed forward" << std::endl;
 	std::cout << testNet.feedForward(in) << std::endl;
 	std::cout << "training" << std::endl;
-	testNet.train(100, inVec, outVec, 2);
-	std::cout << "\n\n\n\n\nfeed forward again:" << std::endl;
+	testNet.train(50, inVec, outVec, 3);
+	std::cout << "feed forward again:" << std::endl;
+	std::cout << testNet.feedForward(in) << std::endl;
+	std::cout << "training again" << std::endl;
+	testNet.train(50, inVec, outVec, 3);
+	std::cout << "feed forward final:" << std::endl;
 	std::cout << testNet.feedForward(in) << std::endl;
 	return 0;
 }
