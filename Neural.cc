@@ -56,9 +56,7 @@ matrix<float> Net::nonlin(matrix<float> inp, bool deriv) {
 	return inp;
 }
 std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> outputs) {
-	
-	std::cout << "weighted inputs and activations" << std::endl;
-	
+		
 	//weighted inputs used for backpropagation - better to call now than to repeatedly call later.
 	std::vector<matrix<float> > winps;	//weighted inputs
 	std::vector<matrix<float> > acts;	//neuron activations
@@ -69,7 +67,6 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 		inputs = nonlin(inputs);
 		acts.push_back(inputs);
 	}
-	std::cout << "error in output" << std::endl;
 	
 	//calculate error in output layer
 	std::vector<matrix<float> > errors;	//large error store
@@ -78,9 +75,7 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 		element_prod(
 			acts.back() - outputs, 
 			nonlin(winps.back(), true)));
-	
-	std::cout << "error in the rest of the layers" << std::endl;
-	
+		
 	//calculate errors in the rest of the layers
 	for(int i = weights.size()-1; i > 0; --i){
 		errors.insert(errors.begin(), 
@@ -91,9 +86,7 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 				nonlin(winps[i-1], true)
 				));
 	}
-	
-	std::cout << "cost per weight" << std::endl;
-	
+		
 	//calculate ΔCost for each weight
 		//create matrix vector
 	std::vector<matrix<float> > dweights;
@@ -103,18 +96,12 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 	}
 		//activated[i]*errors[i]
 	for(unsigned int i = 0; i < dweights.size(); ++i){
-		std::cout << "acts:\t" << acts[i] << "\nerrors:\t" << errors[i] << std::endl;
 		dweights[i] = prod(trans(acts[i]), errors[i])/inputs.size1();	//total error is the average error in the batch
 	}
-	
-	//print error in weights
-	for(auto& m: dweights)
-		std::cout << m <<std::endl;
-	
 	return dweights;
 }
 void Net::train(unsigned int numLoops, std::vector<matrix<float> > inputs, std::vector<matrix<float> > outputs, unsigned int batchSize) {
-	std::vector<matrix<float> > batchInp, batchOutp;		//containers for batches
+	matrix<float> batchInp(batchSize, top[0]), batchOutp(batchSize, top.back());		//containers for batches
 	int tempRandInd;		//random index to add to batch
 	std::vector<int> randInds;	//random indices for making batches
 	std::vector<matrix<float> > dweights;	//weight errors
@@ -130,11 +117,11 @@ void Net::train(unsigned int numLoops, std::vector<matrix<float> > inputs, std::
 				--batchFill;
 			else{
 				randInds.push_back(tempRandInd);
-				batchInp.push_back(inputs[tempRandInd]);
-				batchOutp.push_back(outputs[tempRandInd]);
+				row(batchInp, batchFill) = row(inputs[tempRandInd], 0);
+				row(batchOutp, batchFill) = row(outputs[tempRandInd], 0);
 			}
 		}
-		
+		std::cout << "batch:\t" << batchInp << '\t' << batchOutp << std::endl;
 		//run backprop on batches
 		dweights = backProp(batchInp, batchOutp);
 		
@@ -147,7 +134,8 @@ void Net::train(unsigned int numLoops, std::vector<matrix<float> > inputs, std::
 
 int main(){
 	Net testNet(std::vector<int>({2, 3, 1}));
-	matrix<float> in(3, 2, 1), out(3,1,1);
+	matrix<float> in(4, 2, 1), out(4,1,1);
+	std::vector<matrix<float> > inVec(5, in), outVec(5, out);
 	
 	std::cout << "input:" << std::endl;
 	std::cout << in << std::endl;
@@ -156,7 +144,9 @@ int main(){
 		std::cout << m <<std::endl;
 	std::cout << "running feed forward" << std::endl;
 	std::cout << testNet.feedForward(in) << std::endl;
-	std::cout << "running back prop" << std::endl;
-	testNet.backProp(in, out);
+	std::cout << "training" << std::endl;
+	testNet.train(100, inVec, outVec, 2);
+	std::cout << "\n\n\n\n\nfeed forward again:" << std::endl;
+	std::cout << testNet.feedForward(in) << std::endl;
 	return 0;
 }
