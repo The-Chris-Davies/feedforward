@@ -6,6 +6,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/operation.hpp>
 #include <boost/numeric/ublas/io.hpp>
+#include "./assign.hpp"
 
 using namespace boost::numeric::ublas;
 
@@ -26,6 +27,7 @@ Net::Net(std::vector<int> topology) {
 	top = topology;
 	weights.resize(topology.size()-1);
 	
+	//create weights
 	for(unsigned int i = 0; i < topology.size()-1; ++i) {
 		weights[i] = matrix<float>(topology[i], topology[i+1]);	//height, width
 		for(unsigned int h = 0; h < weights[i].size1(); ++h)
@@ -132,24 +134,31 @@ void Net::train(unsigned int numLoops, std::vector<matrix<float> > inputs, std::
 }
 
 int main(){
-	Net testNet(std::vector<int>({2, 3, 1}));
-	matrix<float> in(1, 2, 1), out(1,1,1);
-	std::vector<matrix<float> > inVec(5, in), outVec(5, out);
-	
-	std::cout << "input:" << std::endl;
-	std::cout << in << std::endl;
+	Net testNet(std::vector<int>({2, 8, 1}));
+	std::vector<matrix<float> > inVec(4, matrix<float>(1,2)), outVec(4, matrix<float>(1,1));
+	inVec[0] <<= 0,0;
+	inVec[1] <<= 0,1;
+	inVec[2] <<= 1,0;
+	inVec[3] <<= 1,1;
+	outVec[0] <<= 0;
+	outVec[1] <<= 0;
+	outVec[2] <<= 0;
+	outVec[3] <<= 1;
+
 	std::cout << "weights:" << std::endl;
 	for(auto& m: testNet.weights)
 		std::cout << m <<std::endl;
 	std::cout << "running feed forward" << std::endl;
-	std::cout << testNet.feedForward(in) << std::endl;
+	std::cout << inVec[0] << " : " << outVec[0] << "\t:\t" << testNet.feedForward(inVec[0]) << std::endl;
+	std::cout << inVec[1] << " : " << outVec[1] << "\t:\t" << testNet.feedForward(inVec[1]) << std::endl;
+	std::cout << inVec[2] << " : " << outVec[2] << "\t:\t" << testNet.feedForward(inVec[2]) << std::endl;
+	std::cout << inVec[3] << " : " << outVec[3] << "\t:\t" << testNet.feedForward(inVec[3]) << std::endl;
 	std::cout << "training" << std::endl;
-	testNet.train(50, inVec, outVec, 3);
-	std::cout << "feed forward again:" << std::endl;
-	std::cout << testNet.feedForward(in) << std::endl;
-	std::cout << "training again" << std::endl;
-	testNet.train(50, inVec, outVec, 3);
+	testNet.train(1000, inVec, outVec, 1);
 	std::cout << "feed forward final:" << std::endl;
-	std::cout << testNet.feedForward(in) << std::endl;
+	std::cout << inVec[0] << " : " << outVec[0] << "\t:\t" << testNet.feedForward(inVec[0]) << std::endl;
+	std::cout << inVec[1] << " : " << outVec[1] << "\t:\t" << testNet.feedForward(inVec[1]) << std::endl;
+	std::cout << inVec[2] << " : " << outVec[2] << "\t:\t" << testNet.feedForward(inVec[2]) << std::endl;
+	std::cout << inVec[3] << " : " << outVec[3] << "\t:\t" << testNet.feedForward(inVec[3]) << std::endl;
 	return 0;
 }
