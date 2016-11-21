@@ -6,6 +6,8 @@
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/operation.hpp>
 #include <boost/numeric/ublas/io.hpp>
+#include <fstream>
+#include <cstdint>
 #include "./assign.hpp"
 
 using namespace boost::numeric::ublas;
@@ -144,7 +146,23 @@ int main(){
 	outVec[1] <<= 0;
 	outVec[2] <<= 0;
 	outVec[3] <<= 1;
-
+	
+	//load files
+	std::vector<std::ifstream> files(9);
+	char img0[784];	//28^2
+	for(unsigned int i = 0; i < files.size(); ++i){
+		files[i].open("sets/data" + (i+48), std::ios::binary);
+	}
+	files[0].read(img0, 784);
+	for(unsigned int i = 0; i < 784; ++i) { 
+		if(img0[i] < 127)std::cout << " ";
+		else std::cout << "#";
+		//std::cout << img0[i] << " ";
+		if(i%28 == 27) std::cout << std::endl;
+	}
+	
+	
+	
 	std::cout << "weights:" << std::endl;
 	for(auto& m: testNet.weights)
 		std::cout << m <<std::endl;
