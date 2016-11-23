@@ -135,6 +135,19 @@ void Net::train(unsigned int numLoops, std::vector<matrix<float> > inputs, std::
 	}
 }
 
+
+int reverseInt (int i) {
+    unsigned char c1, c2, c3, c4;
+
+    c1 = i & 255;
+    c2 = (i >> 8) & 255;
+    c3 = (i >> 16) & 255;
+    c4 = (i >> 24) & 255;
+
+    return ((int)c1 << 24) + ((int)c2 << 16) + ((int)c3 << 8) + c4;
+}
+
+
 int main(){
 	Net testNet(std::vector<int>({2, 8, 1}));
 	std::vector<matrix<float> > inVec(4, matrix<float>(1,2)), outVec(4, matrix<float>(1,1));
@@ -148,21 +161,29 @@ int main(){
 	outVec[3] <<= 1;
 	
 	//load files
-	std::vector<std::ifstream> files(9);
-	char img0[784];	//28^2
-	for(unsigned int i = 0; i < files.size(); ++i){
-		files[i].open("sets/data" + (i+48), std::ios::binary);
+	
+	std::ifstream images("data/images.idx3-ubyte", std::ios::binary);
+	std::ifstream labels("data/labels.idx1-ubyte", std::ios::binary);
+	unsigned int labelMagic, imageMagic, labelSize, imageSize;
+	unsigned char label1;
+	labels.seekg(0, std::ios::beg);
+	labels.read((char*)&labelMagic, 4);
+	labelMagic = reverseInt(labelMagic);
+	labels.read((char*)&labelSize, 4);
+	labelSize = reverseInt(labelSize);
+	
+	images.read((char*)&imageMagic, 4);
+	imageMagic = reverseInt(imageMagic);
+	images.read((char*)&imageSize, 4);
+	imageSize = reverseInt(imageSize);
+	
+	std::cout << labelMagic << "\t" << imageMagic << std::endl;
+	std::cout << labelSize << "\t" << imageSize << std::endl;	
+	for(unsigned int i = 0; i < 100; ++i){
+		labels.read((char*)&label1, 1);
+		std::cout << (int)label1 << std::endl;
 	}
-	files[0].read(img0, 784);
-	for(unsigned int i = 0; i < 784; ++i) { 
-		if(img0[i] < 127)std::cout << " ";
-		else std::cout << "#";
-		//std::cout << img0[i] << " ";
-		if(i%28 == 27) std::cout << std::endl;
-	}
-	
-	
-	
+
 	std::cout << "weights:" << std::endl;
 	for(auto& m: testNet.weights)
 		std::cout << m <<std::endl;
