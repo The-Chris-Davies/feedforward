@@ -111,6 +111,7 @@ void Net::train(unsigned int numLoops, std::vector<matrix<float> > inputs, std::
 	std::vector<matrix<float> > dweights;	//weight errors
 	
 	for(unsigned int numBatches = 0; numBatches < numLoops; ++numBatches){
+		std::cout << numBatches << std::endl;
 		//create batches
 		randInds.clear();
 		batchInp.clear();
@@ -132,6 +133,7 @@ void Net::train(unsigned int numLoops, std::vector<matrix<float> > inputs, std::
 		for(unsigned int i = 0; i < weights.size(); ++i){
 			weights[i] -= dweights[i];
 		}
+		
 	}
 }
 
@@ -149,23 +151,13 @@ int reverseInt (int i) {
 
 
 int main(){
-	Net testNet(std::vector<int>({2, 8, 1}));
-	std::vector<matrix<float> > inVec(4, matrix<float>(1,2)), outVec(4, matrix<float>(1,1));
-	inVec[0] <<= 0,0;
-	inVec[1] <<= 0,1;
-	inVec[2] <<= 1,0;
-	inVec[3] <<= 1,1;
-	outVec[0] <<= 0;
-	outVec[1] <<= 0;
-	outVec[2] <<= 0;
-	outVec[3] <<= 1;
-	
 	//load files
-	
+	const unsigned int EXAMPLES(10000);	//number of examples
+
 	std::ifstream images("data/images.idx3-ubyte", std::ios::binary);
 	std::ifstream labels("data/labels.idx1-ubyte", std::ios::binary);
-	unsigned int labelMagic, imageMagic, labelSize, imageSize;
-	unsigned char label1;
+	unsigned int labelMagic, imageMagic, labelSize, imageSize, imageRows, imageCols;
+	char temp;
 	labels.seekg(0, std::ios::beg);
 	labels.read((char*)&labelMagic, 4);
 	labelMagic = reverseInt(labelMagic);
@@ -177,27 +169,49 @@ int main(){
 	images.read((char*)&imageSize, 4);
 	imageSize = reverseInt(imageSize);
 	
-	std::cout << labelMagic << "\t" << imageMagic << std::endl;
-	std::cout << labelSize << "\t" << imageSize << std::endl;	
-	for(unsigned int i = 0; i < 100; ++i){
-		labels.read((char*)&label1, 1);
-		std::cout << (int)label1 << std::endl;
+	images.read((char*)&imageRows, 4);
+	imageRows = reverseInt(imageRows);
+	images.read((char*)&imageCols, 4);
+	imageCols = reverseInt(imageCols);
+	
+	//populate inputs and outputs.
+	std::vector<matrix<float> > inputs(EXAMPLES, matrix<float>(1, imageRows*imageCols));
+	std::vector<matrix<float> > outputs(EXAMPLES, matrix<float>(1, 10, 0));
+	for(unsigned int i = 0; i < EXAMPLES; ++i){
+		//output generation
+		labels.read(&temp, 1);
+		outputs[i].insert_element(0, temp, 1);
+
+		
+		//input generation
+		for(unsigned int j = 0; j < imageRows*imageCols; ++j){
+			images.read(&temp, 1);
+			inputs[i].insert_element(0, j, temp);
+		}
 	}
 
+	Net testNet(std::vector<int>({imageRows*imageCols, imageRows*imageCols, imageRows*imageCols, 10, 10}));
+
 	std::cout << "weights:" << std::endl;
-	for(auto& m: testNet.weights)
-		std::cout << m <<std::endl;
 	std::cout << "running feed forward" << std::endl;
-	std::cout << inVec[0] << " : " << outVec[0] << "\t:\t" << testNet.feedForward(inVec[0]) << std::endl;
-	std::cout << inVec[1] << " : " << outVec[1] << "\t:\t" << testNet.feedForward(inVec[1]) << std::endl;
-	std::cout << inVec[2] << " : " << outVec[2] << "\t:\t" << testNet.feedForward(inVec[2]) << std::endl;
-	std::cout << inVec[3] << " : " << outVec[3] << "\t:\t" << testNet.feedForward(inVec[3]) << std::endl;
+	std::cout << outputs[0] << "\t:\t" << testNet.feedForward(inputs[0]) << std::endl;
+	std::cout << outputs[1] << "\t:\t" << testNet.feedForward(inputs[1]) << std::endl;
+	std::cout << outputs[2] << "\t:\t" << testNet.feedForward(inputs[2]) << std::endl;
+	std::cout << outputs[3] << "\t:\t" << testNet.feedForward(inputs[3]) << std::endl;
 	std::cout << "training" << std::endl;
-	testNet.train(1000, inVec, outVec, 1);
+	testNet.train(100, inputs, outputs, 10);
 	std::cout << "feed forward final:" << std::endl;
-	std::cout << inVec[0] << " : " << outVec[0] << "\t:\t" << testNet.feedForward(inVec[0]) << std::endl;
-	std::cout << inVec[1] << " : " << outVec[1] << "\t:\t" << testNet.feedForward(inVec[1]) << std::endl;
-	std::cout << inVec[2] << " : " << outVec[2] << "\t:\t" << testNet.feedForward(inVec[2]) << std::endl;
-	std::cout << inVec[3] << " : " << outVec[3] << "\t:\t" << testNet.feedForward(inVec[3]) << std::endl;
+	std::cout << outputs[0] << "\t:\t" << testNet.feedForward(inputs[0]) << std::endl;
+	std::cout << outputs[1] << "\t:\t" << testNet.feedForward(inputs[1]) << std::endl;
+	std::cout << outputs[2] << "\t:\t" << testNet.feedForward(inputs[2]) << std::endl;
+	std::cout << outputs[3] << "\t:\t" << testNet.feedForward(inputs[3]) << std::endl;
 	return 0;
 }
+
+/*	print output and input
+for(unsigned int j = 0; j < imageRows*imageCols; ++j){
+	if(inputs[i](0,j) < 0) std::cout << '@';
+	else std::cout << ' ';
+	if(j % imageCols == imageCols - 1) std::cout << std::endl;
+}
+*/
