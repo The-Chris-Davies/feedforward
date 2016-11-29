@@ -14,35 +14,28 @@ using namespace boost::numeric::ublas;
 
 class Net {
 	public:
-		Net(std::vector <int>);
+		Net(std::vector <unsigned int>);
 		matrix<float> feedForward(matrix<float>);
 		std::vector<matrix<float> > backProp(matrix<float>, matrix<float>);
-		std::vector <int> top;	//the 'topology' of the net.
+		std::vector <unsigned int> top;	//the 'topology' of the net.
 		void train(unsigned int, std::vector<matrix<float> >, std::vector<matrix<float> >, unsigned int = 1);
 	//protected:
 		std::vector<matrix<float> > weights;
 		float nonlin(float, bool = false);
 		matrix<float> nonlin(matrix<float>, bool = false);
 };
-Net::Net(std::vector<int> topology) {
+Net::Net(std::vector<unsigned int> topology) {
 	std::srand(1);
 	top = topology;
 	weights.resize(topology.size()-1);
 	
 	//create weights
 	for(unsigned int i = 0; i < topology.size()-1; ++i) {
-		weights[i] = matrix<float>(topology[i], topology[i+1]);	//height, width
+		weights[i] = matrix<float>(topology[i]+1, topology[i+1]);	//height, width (+2 to add biases)
 		for(unsigned int h = 0; h < weights[i].size1(); ++h)
 			for(unsigned int w = 0; w < weights[i].size2(); ++w)
 				weights[i].insert_element(h, w, ((float)rand() * 2) / (float)RAND_MAX - 1);
 	}
-}
-matrix<float> Net::feedForward(matrix<float> inputs) {
-	for(unsigned int i = 0; i < weights.size(); ++i) {
-		inputs = prod(inputs, weights[i]);
-		inputs = nonlin(inputs);
-	}
-	return inputs;
 }
 float Net::nonlin(const float inp, bool deriv) {
 	float sigmout = (float)(1.0 / (1 + exp((double) -inp)));
@@ -59,6 +52,16 @@ matrix<float> Net::nonlin(matrix<float> inp, bool deriv) {
 		}
 	return inp;
 }
+matrix<float> Net::feedForward(matrix<float> inputs) {
+	for(unsigned int i = 0; i < weights.size(); ++i) {
+		inputs.resize(inputs.size1(), inputs.size2()+1);
+		for(unsigned int h = 0; h < inputs.size1(); ++h)
+			inputs.insert_element(h, inputs.size2()-1, 1);
+		inputs = prod(inputs, weights[i]);
+		inputs = nonlin(inputs);
+	}
+	return inputs;
+}
 std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> outputs) {
 		
 	//weighted inputs used for backpropagation - better to call now than to repeatedly call later.
@@ -66,7 +69,13 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 	std::vector<matrix<float> > acts;	//neuron activations
 	acts.push_back(inputs);				//add input neurons - not technically activated, but still required.
 	for(unsigned int i = 0; i < weights.size(); ++i) {
+		inputs.resize(inputs.size1(), inputs.size2()+1);
+		for(unsigned int h = 0; h < inputs.size1(); ++h)
+			inputs.insert_element(h, inputs.size2()-1, 1);
 		inputs = prod(inputs, weights[i]);
+		std::cout << inputs << '\n' << std::endl;
+		std::cout << inputs.size1() << '\t' << inputs.size2() << std::endl;
+		std::cout << weights[i].size1() << '\t' << weights[i].size2() << std::endl;
 		winps.push_back(inputs);
 		inputs = nonlin(inputs);
 		acts.push_back(inputs);
@@ -138,7 +147,7 @@ void Net::train(unsigned int numLoops, std::vector<matrix<float> > inputs, std::
 }
 
 
-int reverseInt (int i) {
+int reverseInt (int i) {	//for reading ints from file correctly.
     unsigned char c1, c2, c3, c4;
 
     c1 = i & 255;
@@ -149,6 +158,19 @@ int reverseInt (int i) {
     return ((int)c1 << 24) + ((int)c2 << 16) + ((int)c3 << 8) + c4;
 }
 
+unsigned int findAns(matrix<float> sol) {
+	unsigned int largest;
+	float largestSize;
+	for(unsigned int h = 0; h < sol.size1(); ++h)
+		for(unsigned int w = 0; w < sol.size2(); ++w) {
+			if(sol(h, w) > largestSize) {
+				largest = w;
+				largestSize = sol(h,w);
+			}
+			
+		}
+	return largest;
+}
 
 int main(){
 	//load files
@@ -190,21 +212,21 @@ int main(){
 		}
 	}
 
-	Net testNet(std::vector<int>({imageRows*imageCols, imageRows*imageCols, imageRows*imageCols, 10, 10}));
+	Net testNet(std::vector<unsigned int>({imageRows*imageCols, 10}));
 
 	std::cout << "weights:" << std::endl;
 	std::cout << "running feed forward" << std::endl;
-	std::cout << outputs[0] << "\t:\t" << testNet.feedForward(inputs[0]) << std::endl;
-	std::cout << outputs[1] << "\t:\t" << testNet.feedForward(inputs[1]) << std::endl;
-	std::cout << outputs[2] << "\t:\t" << testNet.feedForward(inputs[2]) << std::endl;
-	std::cout << outputs[3] << "\t:\t" << testNet.feedForward(inputs[3]) << std::endl;
+	std::cout << findAns(outputs[0]) << "\t:\t" << findAns(testNet.feedForward(inputs[0])) << std::endl;
+	std::cout << findAns(outputs[1]) << "\t:\t" << findAns(testNet.feedForward(inputs[1])) << std::endl;
+	std::cout << findAns(outputs[2]) << "\t:\t" << findAns(testNet.feedForward(inputs[2])) << std::endl;
+	std::cout << findAns(outputs[3]) << "\t:\t" << findAns(testNet.feedForward(inputs[3])) << std::endl;
 	std::cout << "training" << std::endl;
-	testNet.train(100, inputs, outputs, 10);
+	testNet.train(100, inputs, outputs, 1);
 	std::cout << "feed forward final:" << std::endl;
-	std::cout << outputs[0] << "\t:\t" << testNet.feedForward(inputs[0]) << std::endl;
-	std::cout << outputs[1] << "\t:\t" << testNet.feedForward(inputs[1]) << std::endl;
-	std::cout << outputs[2] << "\t:\t" << testNet.feedForward(inputs[2]) << std::endl;
-	std::cout << outputs[3] << "\t:\t" << testNet.feedForward(inputs[3]) << std::endl;
+	std::cout << findAns(outputs[0]) << "\t:\t" << findAns(testNet.feedForward(inputs[0])) << std::endl;
+	std::cout << findAns(outputs[1]) << "\t:\t" << findAns(testNet.feedForward(inputs[1])) << std::endl;
+	std::cout << findAns(outputs[2]) << "\t:\t" << findAns(testNet.feedForward(inputs[2])) << std::endl;
+	std::cout << findAns(outputs[3]) << "\t:\t" << findAns(testNet.feedForward(inputs[3])) << std::endl;
 	return 0;
 }
 
