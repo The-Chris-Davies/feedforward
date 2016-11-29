@@ -134,16 +134,16 @@ void Net::train(unsigned int numLoops, std::vector<matrix<float> > inputs, std::
 }
 
 int main(){
-	Net testNet(std::vector<int>({2, 8, 1}));
-	std::vector<matrix<float> > inVec(4, matrix<float>(1,2)), outVec(4, matrix<float>(1,1));
+	Net testNet(std::vector<int>({2, 8, 2}));
+	std::vector<matrix<float> > inVec(4, matrix<float>(1,2)), outVec(4, matrix<float>(1,2));
 	inVec[0] <<= 0,0;
 	inVec[1] <<= 0,1;
 	inVec[2] <<= 1,0;
 	inVec[3] <<= 1,1;
-	outVec[0] <<= 0;
-	outVec[1] <<= 0;
-	outVec[2] <<= 0;
-	outVec[3] <<= 1;
+	outVec[0] <<= 1,1;
+	outVec[1] <<= 1,0;
+	outVec[2] <<= 0,1;
+	outVec[3] <<= 0,0;
 
 	std::cout << "weights:" << std::endl;
 	for(auto& m: testNet.weights)
@@ -154,7 +154,7 @@ int main(){
 	std::cout << inVec[2] << " : " << outVec[2] << "\t:\t" << testNet.feedForward(inVec[2]) << std::endl;
 	std::cout << inVec[3] << " : " << outVec[3] << "\t:\t" << testNet.feedForward(inVec[3]) << std::endl;
 	std::cout << "training" << std::endl;
-	testNet.train(1000, inVec, outVec, 1);
+	testNet.train(100, inVec, outVec, 1);
 	std::cout << "feed forward final:" << std::endl;
 	std::cout << inVec[0] << " : " << outVec[0] << "\t:\t" << testNet.feedForward(inVec[0]) << std::endl;
 	std::cout << inVec[1] << " : " << outVec[1] << "\t:\t" << testNet.feedForward(inVec[1]) << std::endl;
