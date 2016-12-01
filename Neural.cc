@@ -134,31 +134,48 @@ void Net::train(unsigned int numLoops, std::vector<matrix<float> > inputs, std::
 }
 
 int main(){
-	Net testNet(std::vector<int>({2, 8, 2}));
-	std::vector<matrix<float> > inVec(4, matrix<float>(1,2)), outVec(4, matrix<float>(1,2));
-	inVec[0] <<= 0,0;
-	inVec[1] <<= 0,1;
-	inVec[2] <<= 1,0;
-	inVec[3] <<= 1,1;
-	outVec[0] <<= 1,1;
-	outVec[1] <<= 1,0;
-	outVec[2] <<= 0,1;
-	outVec[3] <<= 0,0;
+	int inputs, outputs, examples, tempInt;
+	std::cout << "welcome to a neural net logic gate tutorial!" << std::endl;
+	std::cout << "please enter the number of inputs of the gate" << std::endl;
+	std::cin >> inputs;
+	std::cout << "How many outputs?" << std::endl;
+	std::cin >> outputs;
+	std::cout << "How many training examples?" << std::endl;
+	std::cin >> examples;
+	std::vector<matrix<float> > inVec(examples, matrix<float>(1,inputs)), outVec(examples, matrix<float>(1,outputs));
+	for(unsigned int n = 0; n < examples; ++n) {
+		std::cout << "Enter the inputs for one example, " << std::endl;
+		for(unsigned int i = 0; i < inputs; i++) {
+			std::cin >> tempInt;
+			inVec[n].insert_element(0, i, tempInt);
+		}
+		
+		std::cout << "Enter the outputs for one example, " << std::endl;
+		for(unsigned int i = 0; i < inputs; i++) {
+			std::cin >> tempInt;
+			outVec[n].insert_element(0, i, tempInt);
+		}
+	}
+	std:: cout << "Making net!" << std::endl;
+	Net logic(std::vector<int>({inputs, outputs}));
+	Net unlogic(std::vector<int>({inputs, outputs}));
+	std::cout << "Training!" << std::endl;
+	logic.train(1000, inVec, outVec, 1);
+	std::cout << "Done Training!" << std::endl;
+	
+	matrix<float> testIn(1, inputs);
+	while(true){
+		std::cout << "enter some inputs to run" << std::endl;
+		for(unsigned int i = 0; i < inputs; i++) {
+			std::cin >> tempInt;
+			testIn.insert_element(0, i, tempInt);
+		}
+		std::cout << "trained outputs:" << std::endl;
+		std::cout << logic.feedForward(testIn) << std::endl;
+		std::cout << "untrained outputs:" << std::endl;
+		std::cout << unlogic.feedForward(testIn) << "\n\n\n" << std::endl;
 
-	std::cout << "weights:" << std::endl;
-	for(auto& m: testNet.weights)
-		std::cout << m <<std::endl;
-	std::cout << "running feed forward" << std::endl;
-	std::cout << inVec[0] << " : " << outVec[0] << "\t:\t" << testNet.feedForward(inVec[0]) << std::endl;
-	std::cout << inVec[1] << " : " << outVec[1] << "\t:\t" << testNet.feedForward(inVec[1]) << std::endl;
-	std::cout << inVec[2] << " : " << outVec[2] << "\t:\t" << testNet.feedForward(inVec[2]) << std::endl;
-	std::cout << inVec[3] << " : " << outVec[3] << "\t:\t" << testNet.feedForward(inVec[3]) << std::endl;
-	std::cout << "training" << std::endl;
-	testNet.train(100, inVec, outVec, 1);
-	std::cout << "feed forward final:" << std::endl;
-	std::cout << inVec[0] << " : " << outVec[0] << "\t:\t" << testNet.feedForward(inVec[0]) << std::endl;
-	std::cout << inVec[1] << " : " << outVec[1] << "\t:\t" << testNet.feedForward(inVec[1]) << std::endl;
-	std::cout << inVec[2] << " : " << outVec[2] << "\t:\t" << testNet.feedForward(inVec[2]) << std::endl;
-	std::cout << inVec[3] << " : " << outVec[3] << "\t:\t" << testNet.feedForward(inVec[3]) << std::endl;
+		
+	}
 	return 0;
 }
