@@ -91,15 +91,17 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 		
 	//calculate errors in the rest of the layers
 	for(int i = weights.size()-1; i > 0; --i){
-		errors.insert(errors.begin(), 
+		errors.insert(errors.begin(),
 			element_prod(
 				trans(prod(
-					weights[i], 
-					trans(errors[0]))), 
+					weights[i],
+					trans(errors[0]))),
 				nonlin(winps[i-1], true)
 				));
 	}
-		
+	std::cout << "errors n' things" << std::endl;
+	std::cout << errors[0] << std::endl;
+	
 	//calculate ΔCost for each weight
 		//create matrix vector
 	std::vector<matrix<float> > dweights;
