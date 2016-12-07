@@ -212,7 +212,7 @@ int main(){
 		}
 	}
 
-	Net testNet(std::vector<unsigned int>({imageRows*imageCols, 10}));
+	Net testNet(std::vector<unsigned int>({imageRows*imageCols, 10, 10}));
 
 	std::cout << "weights:" << std::endl;
 	std::cout << "running feed forward" << std::endl;
