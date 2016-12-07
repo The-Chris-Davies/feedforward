@@ -31,7 +31,7 @@ Net::Net(std::vector<unsigned int> topology) {
 	
 	//create weights
 	for(unsigned int i = 0; i < topology.size()-1; ++i) {
-		weights[i] = matrix<float>(topology[i]+1, topology[i+1]);	//height, width (+2 to add biases)
+		weights[i] = matrix<float>(topology[i]+1, topology[i+1]);	//height, width (+1 to add biases)
 		for(unsigned int h = 0; h < weights[i].size1(); ++h)
 			for(unsigned int w = 0; w < weights[i].size2(); ++w)
 				weights[i].insert_element(h, w, ((float)rand() * 2) / (float)RAND_MAX - 1);
@@ -89,9 +89,6 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 			acts.back() - outputs, 
 			nonlin(winps.back(), true)));
 
-	std::cout << "errors n' things" << std::endl;
-	std::cout << errors[0] << std::endl;
-
 	//calculate errors in the rest of the layers
 	for(int i = weights.size()-1; i > 0; --i){
 
@@ -109,13 +106,18 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 	//calculate ΔCost for each weight
 	//create matrix vector
 	std::vector<matrix<float> > dweights;
+	matrix<float> resizeActs;
 	for(auto& tempMat : weights){
 		dweights.push_back(matrix <float>(tempMat.size1(), tempMat.size2()));
 		dweights.back().clear();
 	}
 		//activated[i]*errors[i]
 	for(unsigned int i = 0; i < dweights.size(); ++i){
-		dweights[i] = prod(trans(acts[i]), errors[i])/inputs.size1();	//total error is the average error in the batch
+		resizeActs = acts[i];
+		resizeActs.resize(resizeActs.size1(), resizeActs.size2()+1);
+		for(unsigned int h = 0; h < resizeActs.size1(); ++h)
+			resizeActs.insert_element(h, resizeActs.size2()-1, 1);
+		dweights[i] = prod(trans(resizeActs), errors[i])/inputs.size1();	//total error is the average error in the batch
 	}
 	return dweights;
 }
@@ -218,7 +220,7 @@ int main(){
 		}
 	}
 
-	Net testNet(std::vector<unsigned int>({imageRows*imageCols, 10, 10}));
+	Net testNet(std::vector<unsigned int>({imageRows*imageCols, imageRows*imageCols, 10, 10}));
 
 	std::cout << "weights:" << std::endl;
 	std::cout << "running feed forward" << std::endl;
