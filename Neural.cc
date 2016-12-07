@@ -80,10 +80,10 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 		inputs = nonlin(inputs);
 		acts.push_back(inputs);
 	}
-	
+
 	//calculate error in output layer
 	std::vector<matrix<float> > errors;	//large error store
-	
+
 	errors.push_back(		//elementwise product of derivative of cost and derivative of neurons
 		element_prod(
 			acts.back() - outputs, 
@@ -91,14 +91,10 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 
 	std::cout << "errors n' things" << std::endl;
 	std::cout << errors[0] << std::endl;
-		
+
 	//calculate errors in the rest of the layers
 	for(int i = weights.size()-1; i > 0; --i){
 
-	std::cout << "errors in loop" << std::endl;
-	std::cout << "errors:\t" << errors[0] << std::endl;
-	std::cout << "modded weights:\t" << subrange(weights[i], 0,weights[i].size1()-1, 0,weights[i].size2()) << std::endl;
-	std::cout << "nonlin(winps[i-1], true):\t" << nonlin(winps[i-1], true) << std::endl;
 		errors.insert(errors.begin(),
 			element_prod(
 				trans(prod(
@@ -107,10 +103,11 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 				nonlin(winps[i-1], true)
 				));
 	}
+
 	std::cout << "done errors! (finally!)" << std::endl;
-	
+
 	//calculate ΔCost for each weight
-		//create matrix vector
+	//create matrix vector
 	std::vector<matrix<float> > dweights;
 	for(auto& tempMat : weights){
 		dweights.push_back(matrix <float>(tempMat.size1(), tempMat.size2()));
