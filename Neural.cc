@@ -88,19 +88,26 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 		element_prod(
 			acts.back() - outputs, 
 			nonlin(winps.back(), true)));
+
+	std::cout << "errors n' things" << std::endl;
+	std::cout << errors[0] << std::endl;
 		
 	//calculate errors in the rest of the layers
 	for(int i = weights.size()-1; i > 0; --i){
+
+	std::cout << "errors in loop" << std::endl;
+	std::cout << "errors:\t" << errors[0] << std::endl;
+	std::cout << "modded weights:\t" << subrange(weights[i], 0,weights[i].size1()-1, 0,weights[i].size2()) << std::endl;
+	std::cout << "nonlin(winps[i-1], true):\t" << nonlin(winps[i-1], true) << std::endl;
 		errors.insert(errors.begin(),
 			element_prod(
 				trans(prod(
-					weights[i],
+					subrange(weights[i], 0,weights[i].size1()-1, 0,weights[i].size2()),
 					trans(errors[0]))),
 				nonlin(winps[i-1], true)
 				));
 	}
-	std::cout << "errors n' things" << std::endl;
-	std::cout << errors[0] << std::endl;
+	std::cout << "done errors! (finally!)" << std::endl;
 	
 	//calculate ΔCost for each weight
 		//create matrix vector
