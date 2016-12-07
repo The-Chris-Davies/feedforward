@@ -34,15 +34,15 @@ Net::Net(std::vector<unsigned int> topology) {
 		weights[i] = matrix<float>(topology[i]+1, topology[i+1]);	//height, width (+1 to add biases)
 		for(unsigned int h = 0; h < weights[i].size1(); ++h)
 			for(unsigned int w = 0; w < weights[i].size2(); ++w)
-				weights[i].insert_element(h, w, ((float)rand() * 2) / (float)RAND_MAX - 1);
+				weights[i].insert_element(h, w, 0);//((float)rand() * 2) / (float)RAND_MAX - 1);
 	}
 }
 float Net::nonlin(const float inp, bool deriv) {
-	float sigmout = (float)(1.0 / (1 + exp((double) -inp)));
+	float sigmout = (float)(1.0 / (1 + exp(-inp)));
 	
 	if(deriv)
-		return sigmout * (1 - sigmout);
-	return sigmout;
+		return 2*(sigmout * (1 - sigmout));
+	return 2*sigmout-1;
 }
 matrix<float> Net::nonlin(matrix<float> inp, bool deriv) {
 	//matrix overload for nonlin function
@@ -73,9 +73,6 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 		for(unsigned int h = 0; h < inputs.size1(); ++h)
 			inputs.insert_element(h, inputs.size2()-1, 1);
 		inputs = prod(inputs, weights[i]);
-		std::cout << inputs << '\n' << std::endl;
-		std::cout << inputs.size1() << '\t' << inputs.size2() << std::endl;
-		std::cout << weights[i].size1() << '\t' << weights[i].size2() << std::endl;
 		winps.push_back(inputs);
 		inputs = nonlin(inputs);
 		acts.push_back(inputs);
@@ -100,8 +97,6 @@ std::vector<matrix<float> > Net::backProp(matrix<float> inputs, matrix<float> ou
 				nonlin(winps[i-1], true)
 				));
 	}
-
-	std::cout << "done errors! (finally!)" << std::endl;
 
 	//calculate ΔCost for each weight
 	//create matrix vector
@@ -148,7 +143,7 @@ void Net::train(unsigned int numLoops, std::vector<matrix<float> > inputs, std::
 		
 		//train weights!
 		for(unsigned int i = 0; i < weights.size(); ++i){
-			weights[i] -= dweights[i];
+			weights[i] -= dweights[i]*.00025;
 		}
 		
 	}
@@ -171,7 +166,7 @@ unsigned int findAns(matrix<float> sol) {
 	float largestSize;
 	for(unsigned int h = 0; h < sol.size1(); ++h)
 		for(unsigned int w = 0; w < sol.size2(); ++w) {
-			if(sol(h, w) > largestSize) {
+			if(sol(h, w) >= largestSize) {
 				largest = w;
 				largestSize = sol(h,w);
 			}
@@ -206,11 +201,11 @@ int main(){
 	
 	//populate inputs and outputs.
 	std::vector<matrix<float> > inputs(EXAMPLES, matrix<float>(1, imageRows*imageCols));
-	std::vector<matrix<float> > outputs(EXAMPLES, matrix<float>(1, 10, 0));
+	std::vector<matrix<float> > outputs(EXAMPLES, matrix<float>(1, 10, -0.9));
 	for(unsigned int i = 0; i < EXAMPLES; ++i){
 		//output generation
 		labels.read(&temp, 1);
-		outputs[i].insert_element(0, temp, 1);
+		outputs[i].insert_element(0, temp, .9);
 
 		
 		//input generation
@@ -220,28 +215,29 @@ int main(){
 		}
 	}
 
-	Net testNet(std::vector<unsigned int>({imageRows*imageCols, imageRows*imageCols, 10, 10}));
+	Net testNet(std::vector<unsigned int>({imageRows*imageCols, 10}));
 
-	std::cout << "weights:" << std::endl;
-	std::cout << "running feed forward" << std::endl;
-	std::cout << findAns(outputs[0]) << "\t:\t" << findAns(testNet.feedForward(inputs[0])) << std::endl;
-	std::cout << findAns(outputs[1]) << "\t:\t" << findAns(testNet.feedForward(inputs[1])) << std::endl;
-	std::cout << findAns(outputs[2]) << "\t:\t" << findAns(testNet.feedForward(inputs[2])) << std::endl;
-	std::cout << findAns(outputs[3]) << "\t:\t" << findAns(testNet.feedForward(inputs[3])) << std::endl;
+
 	std::cout << "training" << std::endl;
-	testNet.train(100, inputs, outputs, 1);
+	testNet.train(10000, inputs, outputs, 10);
 	std::cout << "feed forward final:" << std::endl;
-	std::cout << findAns(outputs[0]) << "\t:\t" << findAns(testNet.feedForward(inputs[0])) << std::endl;
-	std::cout << findAns(outputs[1]) << "\t:\t" << findAns(testNet.feedForward(inputs[1])) << std::endl;
-	std::cout << findAns(outputs[2]) << "\t:\t" << findAns(testNet.feedForward(inputs[2])) << std::endl;
-	std::cout << findAns(outputs[3]) << "\t:\t" << findAns(testNet.feedForward(inputs[3])) << std::endl;
+	std::cout << "weights:" << std::endl;
+	for(auto& tmat : testNet.weights) std::cout << tmat << "\n\n\n\n\n\n\n\n" << std::endl;
+	
+	int totalRight = 0;
+	for(unsigned int i = 0; i < EXAMPLES; ++i){
+		for(unsigned int j = 0; j < imageRows*imageCols; ++j){
+			if(inputs[i](0,j) < 0) std::cout << '@';
+			else std::cout << ' ';
+			if(j % imageCols == imageCols - 1) std::cout << std::endl;
+		}
+		std::cout << "Real Answer:\t" << findAns(outputs[i])  << '\t' << outputs[i] << std::endl;
+		std::cout << "My answer:\t" << findAns(testNet.feedForward(inputs[i])) << '\t' << testNet.feedForward(inputs[i]) << std::endl;
+		
+		if(findAns(testNet.feedForward(inputs[i])) == findAns(outputs[i])) ++totalRight;
+		std::cout << "Percent Correct:\t" << totalRight / static_cast<float>(i+1) << std::endl;
+		std::cin.get();
+	}
 	return 0;
 }
 
-/*	print output and input
-for(unsigned int j = 0; j < imageRows*imageCols; ++j){
-	if(inputs[i](0,j) < 0) std::cout << '@';
-	else std::cout << ' ';
-	if(j % imageCols == imageCols - 1) std::cout << std::endl;
-}
-*/
